@@ -7,28 +7,16 @@ from urllib.parse import urlparse
 import qbittorrentapi
 import transmission_rpc
 
+# Get config from config.json.
+config: dict = json.load(open('./config.json', 'r'))
 
-def main():
-    # Get config from config.json.
-    config: dict = json.load(open('./config.json', 'r'))
 
-    # Skip check or not.
-    skip_check: bool = config['skip_check']
-
+def get_qbit():
     # qBittorrent settings.
     qb_host: str = config['qbittorrent']['host']
     qb_port: int = config['qbittorrent']['port']
     qb_username: str | None = config['qbittorrent']['username'] or None
     qb_password: str | None = config['qbittorrent']['password'] or None
-
-    # Transmission settings.
-    tr_protocol: Literal['http', 'https'] = config['transmission']['protocol']
-    tr_host: str = config['transmission']['host']
-    tr_port: int = config['transmission']['port']
-    tr_path: str = config['transmission']['path']
-    tr_username: str | None = config['transmission']['username'] or None
-    tr_password: str | None = config['transmission']['password'] or None
-    tr_torrent_dir: str = config['transmission']['torrent_dir']
 
     # Connect qBittorrent.
     qb_client = qbittorrentapi.Client(
@@ -42,6 +30,18 @@ def main():
     qb_client.auth_log_in()
     print(f"Connected to qBittorrent {qb_client.app.version}.")
 
+    return qb_client
+
+
+def get_transmission():
+    # Transmission settings.
+    tr_protocol: Literal['http', 'https'] = config['transmission']['protocol']
+    tr_host: str = config['transmission']['host']
+    tr_port: int = config['transmission']['port']
+    tr_path: str = config['transmission']['path']
+    tr_username: str | None = config['transmission']['username'] or None
+    tr_password: str | None = config['transmission']['password'] or None
+
     # Connect Transmission.
     tr_client = transmission_rpc.Client(
         protocol=tr_protocol,
@@ -53,8 +53,17 @@ def main():
     )
 
     # Check if login is successful.
-    tr_session = tr_client.session_stats()
-    print(f"Connected to Transmission {tr_session.version}.")
+    print(f"Connected to Transmission {tr_client.server_version}, {tr_client.protocol_version}.")
+
+    return tr_client
+
+
+def main():
+    # Skip check or not.
+    skip_check: bool = config['skip_check']
+
+    qb_client = get_qbit()
+    tr_client = get_transmission()
 
     # Get all hashes of torrents in qBittorrent.
     qb_torrents = qb_client.torrents_info()
@@ -67,24 +76,22 @@ def main():
 
     for tr_torrent in tr_torrents:
         # Pause the torrent in Transmission.
-        tr_torrent.stop()
+        tr_client.stop_torrent(tr_torrent.id)
 
         # Skip torrents that already exist in qBittorrent.
         if tr_torrent.hashString in qb_torrent_hashes:
             print(f"Torrent {tr_torrent.name} already exists in qBittorrent, skipping.")
             continue
 
-        # Get torrent file path.
-        tr_torrent_path = str(Path(tr_torrent_dir).expanduser().joinpath(tr_torrent.hashString + '.torrent').absolute())
-
         category: str = Path(tr_torrent.download_dir).name
 
         # Add torrent to qBittorrent.
         qb_client.torrents_add(
-            torrent_files=open(tr_torrent_path, 'rb'),
+            torrent_files=open(tr_torrent.torrent_file, 'rb'),
             save_path=tr_torrent.download_dir,
             rename=tr_torrent.name,
             category=category,
+            tags=tr_torrent.labels,
             is_skip_checking=skip_check,
             is_paused=True
         )

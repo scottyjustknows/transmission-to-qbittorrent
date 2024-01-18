@@ -1,7 +1,5 @@
 # Transmission to qBittorrent
 
-[中文](./README.zh.md)
-
 Transfer all torrents in [Transmission](https://transmissionbt.com/) to [qBittorrent](https://www.qbittorrent.org/). Support for skipping checking.
 
 **Warning: Use with caution! I am not responsible for any consequences.**
@@ -35,11 +33,8 @@ Transfer all torrents in [Transmission](https://transmissionbt.com/) to [qBittor
      + password
      + torrent_dir: directory of torrent files. If Transmission runs in a Docker container, it is **a path in the host**
 
-6. Run the script: `python3 main.py` or `python main.py`.
+6. Install dependencies: `pip install -r requirements.txt`
 
-7. After running, start torrents manually.
+7. Run the script: `python3 main.py` or `python main.py`.
 
-## Thanks
-
-+ [qbittorrent-api](https://github.com/rmartin16/qbittorrent-api)
-+ [transmission-rpc](https://github.com/trim21/transmission-rpc)
+8. After running, start torrents manually.
