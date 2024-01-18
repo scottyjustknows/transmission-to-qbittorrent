@@ -77,10 +77,14 @@ def main():
         # Get torrent file path.
         tr_torrent_path = str(Path(tr_torrent_dir).expanduser().joinpath(tr_torrent.hashString + '.torrent').absolute())
 
+        category: str = Path(tr_torrent.download_dir).name
+
         # Add torrent to qBittorrent.
         qb_client.torrents_add(
             torrent_files=open(tr_torrent_path, 'rb'),
             save_path=tr_torrent.download_dir,
+            rename=tr_torrent.name,
+            category=category,
             is_skip_checking=skip_check,
             is_paused=True
         )
