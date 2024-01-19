@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import qbittorrentapi
 import transmission_rpc
+from qbittorrentapi import TorrentDictionary, TorrentFile
 
 # Get config from config.json.
 config: dict = json.load(open('./config.json', 'r'))
@@ -19,7 +20,7 @@ def get_qbit():
     qb_password: str | None = config['qbittorrent']['password'] or None
 
     # Connect qBittorrent.
-    qb_client = qbittorrentapi.Client(
+    client = qbittorrentapi.Client(
         host=qb_host,
         port=qb_port,
         username=qb_username,
@@ -27,10 +28,10 @@ def get_qbit():
     )
 
     # Check if login is successful.
-    qb_client.auth_log_in()
-    print(f"Connected to qBittorrent {qb_client.app.version}.")
+    client.auth_log_in()
+    print(f"Connected to qBittorrent {client.app.version}, {client.app.webapiVersion}.")
 
-    return qb_client
+    return client
 
 
 def get_transmission():
@@ -43,7 +44,7 @@ def get_transmission():
     tr_password: str | None = config['transmission']['password'] or None
 
     # Connect Transmission.
-    tr_client = transmission_rpc.Client(
+    client = transmission_rpc.Client(
         protocol=tr_protocol,
         username=tr_username,
         password=tr_password,
@@ -53,17 +54,18 @@ def get_transmission():
     )
 
     # Check if login is successful.
-    print(f"Connected to Transmission {tr_client.server_version}, {tr_client.protocol_version}.")
+    print(f"Connected to Transmission {client.server_version}, {client.protocol_version}.")
 
-    return tr_client
+    return client
+
+
+qb_client = get_qbit()
+tr_client = get_transmission()
 
 
 def main():
     # Skip check or not.
     skip_check: bool = config['skip_check']
-
-    qb_client = get_qbit()
-    tr_client = get_transmission()
 
     # Get all hashes of torrents in qBittorrent.
     qb_torrents = qb_client.torrents_info()
@@ -96,11 +98,22 @@ def main():
             is_paused=True
         )
 
-        tr_torrent_tracker_domain = urlparse(tr_torrent.trackers[0]['announce']).netloc
+        tr_torrent_tracker_domain = urlparse(tr_torrent.trackers[0].announce).netloc
         print(f"Torrent: {tr_torrent.name} Path: {tr_torrent.download_dir} Tracker: {tr_torrent_tracker_domain}")
 
         time.sleep(1)
 
 
+def fix_renamed():
+    torrent: TorrentDictionary
+
+    for torrent in qb_client.torrents.info():
+        files = torrent.files
+        if len(files) == 1:
+            file: TorrentFile = torrent.files[0]
+            torrent.rename_file(file.id, torrent.info.name)
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    fix_renamed()
