@@ -115,5 +115,5 @@ def fix_renamed():
 
 
 if __name__ == "__main__":
-    # main()
-    fix_renamed()
+    main()
+    # fix_renamed()
