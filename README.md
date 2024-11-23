@@ -19,6 +19,7 @@ Transfer all torrents in [Transmission](https://transmissionbt.com/) to [qBittor
 5. Create config.json in repository folder according to config.json.template:
 
    + skip_check: skip check or not
+   + fix_renamed: fix renaming or not
    + qbittorrent:
      + host: IP address of qBittorrent Web
      + port: port of qBittorrent Web

@@ -1,5 +1,6 @@
 {
     "skip_check": true,
+    "fix_renamed": false,
     "qbittorrent": {
         "host": "127.0.0.1",
         "port": 8080,

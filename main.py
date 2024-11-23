@@ -66,6 +66,8 @@ tr_client = get_transmission()
 def main():
     # Skip check or not.
     skip_check: bool = config['skip_check']
+    # Fix renamed torrents
+    fix_renamed: bool = config['fix_renamed']
 
     # Get all hashes of torrents in qBittorrent.
     qb_torrents = qb_client.torrents_info()
@@ -75,6 +77,15 @@ def main():
     # Get all torrents in Transmission.
     tr_torrents = tr_client.get_torrents()
     print(f"Fetched {len(tr_torrents)} torrents in Transmission. Transfer them to qBittorrent...")
+
+    if (fix_renamed):
+        torrent: TorrentDictionary
+
+        for torrent in qb_client.torrents.info():
+            files = torrent.files
+            if len(files) == 1:
+                file: TorrentFile = torrent.files[0]
+                torrent.rename_file(file.id, torrent.info.name)
 
     for tr_torrent in tr_torrents:
         # Pause the torrent in Transmission.
@@ -103,17 +114,5 @@ def main():
 
         time.sleep(1)
 
-
-def fix_renamed():
-    torrent: TorrentDictionary
-
-    for torrent in qb_client.torrents.info():
-        files = torrent.files
-        if len(files) == 1:
-            file: TorrentFile = torrent.files[0]
-            torrent.rename_file(file.id, torrent.info.name)
-
-
 if __name__ == "__main__":
     main()
-    # fix_renamed()
